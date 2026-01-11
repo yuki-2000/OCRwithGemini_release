@@ -1,0 +1,58 @@
+name: Convert Markdown to HTML
+
+on:
+  push:
+    paths:
+      - '**.md'  # .mdファイルが変更されたときのみ実行
+
+permissions:
+  contents: write  # HTMLをコミットするために書き込み権限が必要
+
+jobs:
+  convert:
+    runs-on: ubuntu-latest
+    steps:
+      # 1. コードのチェックアウト（履歴をすべて取得）
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # 2. Pandocのセットアップ (公式Action)
+      - name: Install Pandoc
+        uses: pandoc/actions/setup@v1
+        with:
+          version: '3.1.11'  # 'latest' の代わりに具体的なバージョンを指定
+
+      # 3. 変更された.mdファイルを特定して変換
+      - name: Convert Changed Markdown to HTML
+        run: |
+          # 今回のプッシュで追加・修正された .md ファイルを取得
+          # (最初のコミットなどの場合は比較対象がないため、全ファイルを対象にする等の考慮が必要)
+          files=$(git diff --name-only --diff-filter=AM ${{ github.event.before }} ${{ github.sha }} | grep '\.md$' || true)
+          
+          if [ -z "$files" ]; then
+            echo "No markdown files changed."
+            exit 0
+          fi
+
+          for file in $files; do
+            echo "Converting $file..."
+            # 拡張子を .html に変更したファイル名を生成
+            output="${file%.md}.html"
+            
+            # Pandocで変換 (--standalone でHTMLの完全な構造にする --tocで目次)            
+            # pandoc "$file" --standalone --self-contained --katex -o "$output"
+            # pandoc "$file" --standalone --self-contained --katex --template="$GITHUB_WORKSPACE/templates/easy_template.html" -o "$output"
+            # pandoc "$file" --standalone --self-contained --katex --template="$GITHUB_WORKSPACE/templates/elegant_bootstrap_menu.html" --css "$GITHUB_WORKSPACE/templates/elegant_bootstrap.css" -o "$output"
+            pandoc "$file" --standalone --self-contained --katex --template="$GITHUB_WORKSPACE/templates/bootstrap_menu.html" --toc -o "$output"
+            
+            
+          done
+
+      # 4. 生成されたHTMLをリポジトリにコミット
+      - name: Commit and Push changes
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "Auto-convert Markdown to HTML [skip ci]"
+          file_pattern: '**.html'

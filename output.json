@@ -1,0 +1,80 @@
+[
+  {
+    "id": "p2_fig1",
+    "filename": "p2_fig_01.png",
+    "page_number": 2,
+    "box_2d": [
+      588,
+      86,
+      960,
+      480
+    ],
+    "type": "figure",
+    "caption": "Figure 4-1.-Thrust chamber assembly."
+  },
+  {
+    "id": "p2_fig2",
+    "filename": "p2_fig_02.png",
+    "page_number": 2,
+    "box_2d": [
+      588,
+      510,
+      960,
+      910
+    ],
+    "type": "figure",
+    "caption": "Figure 4-2.--Thrust chamber injector."
+  },
+  {
+    "id": "p4_fig1",
+    "filename": "p4_fig_01.png",
+    "page_number": 4,
+    "box_2d": [
+      181,
+      496,
+      464,
+      834
+    ],
+    "type": "figure",
+    "caption": "Figure 4-3.-Theoretical O2/RP-1 combustion data (frozen composition), (pc)ns = 1000 psia."
+  },
+  {
+    "id": "p4_fig2",
+    "filename": "p4_fig_02.png",
+    "page_number": 4,
+    "box_2d": [
+      528,
+      496,
+      846,
+      834
+    ],
+    "type": "figure",
+    "caption": "Figure 4-4.-Theoretical O2/H2 combustion data (frozen composition). (Pc)ns = 800 psia."
+  },
+  {
+    "id": "p5_fig1",
+    "filename": "p5_fig_01.png",
+    "page_number": 5,
+    "box_2d": [
+      139,
+      183,
+      456,
+      523
+    ],
+    "type": "figure",
+    "caption": "Figure 4-5.-Theoretical F2/H2 combustion data (frozen composition), (pc)ns = 100 psia."
+  },
+  {
+    "id": "p5_fig2",
+    "filename": "p5_fig_02.png",
+    "page_number": 5,
+    "box_2d": [
+      514,
+      183,
+      853,
+      523
+    ],
+    "type": "figure",
+    "caption": "Figure 4-6.-Theoretical N2O4/N2H4 combustion data (frozen composition), (pc)ns = 100 psia."
+  }
+]
