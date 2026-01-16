@@ -148,6 +148,18 @@ def save_outputs(extraction_data, json_filename="output.json", md_filename="outp
     print(f"保存完了: {json_filename}, {md_filename}")
 
 
+    #3. Markdown中の画像リンクがJSONで指定されているか確認
+    # JSONにあるファイル名のセット
+    json_filenames = {item.filename for item in extraction_data.extractions}
+    
+    # Markdownからリンクを抽出
+    md_filenames = re.findall(r'!\[.*?\]\((.*?)\)', extraction_data.content_markdown)
+    
+    for md_file in md_filenames:
+        if md_file not in json_filenames:
+            print(f"\nWarning: Markdownにある {md_file} がJSONに見当たりません。\n")
+
+
 
 
 #--------------------------------------------------------------------------------
