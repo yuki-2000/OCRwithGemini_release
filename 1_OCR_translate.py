@@ -167,22 +167,35 @@ def save_outputs(extraction_data, json_filename="output.json", md_filename="outp
 
 
 
-client = genai.Client(api_key=api_key)
+#client = genai.Client(api_key=api_key)
+
+# for media resolution only
+client = genai.Client(api_key=api_key, http_options={'api_version': 'v1alpha'})
 
 file_upload = client.files.upload(file=upload_file)
 
 #apiでサーバーに送信
 response = client.models.generate_content(
-    model="gemini-3-flash-preview",
-    contents=[file_upload, prompt],
+    model="gemini-3-flash-preview", 
+    contents=[
+        types.Content(
+            parts=[
+                types.Part(prompt),
+                types.Part(file_upload, media_resolution={"level": "media_resolution_medium"})
+                ])], #media_resolution_low、media_resolution_medium、media_resolution_high、media_resolution_ultra_high
     config=types.GenerateContentConfig(
         thinking_config=types.ThinkingConfig(
-            thinking_level="low",#"high", #"medium", #"low" <, "minimal"　#low and minimal has no thinking
+            thinking_level="high",#"high", #"medium", #"low" <, "minimal"　#low and minimal has no thinking
             include_thoughts=True),
         response_mime_type="application/json",
         response_schema=DocumentExtractionResponse
         )
     )
+
+
+
+
+
 
 #返ってきた内容を表示。
 for part in response.parts:
