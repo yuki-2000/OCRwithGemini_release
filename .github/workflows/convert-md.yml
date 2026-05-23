@@ -65,7 +65,7 @@ jobs:
             
             # 4-3. 一時ファイルから EPUB3 へ変換 (MathML適用) [2]
             output_epub="${file%.md}.epub"
-            pandoc "$temp_file" -t epub3 --standalone --mathml --toc -o "$output_epub" [2]
+            pandoc "$temp_file" -t epub3 --standalone --mathml --toc -o "$output_epub"
             
             # 4-4. [追加] 変換が無事に終わったら、一時ファイルを即時削除
             rm -f "$temp_file"
