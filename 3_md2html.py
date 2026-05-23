@@ -2,7 +2,7 @@ import pypandoc
 
 def convert_md_to_html():
     input_file = 'output.md'
-    output_file = 'output_local.html'
+    output_file = 'output.html'
 
     # Pandocのオプション設定
     # --standalone: ヘッダーやCSSを含む完全なHTMLを作成
