@@ -45,7 +45,8 @@ jobs:
             # pandoc "$file" --standalone --self-contained --katex -o "$output"
             # pandoc "$file" --standalone --self-contained --katex --template="$GITHUB_WORKSPACE/templates/easy_template.html" -o "$output"
             # pandoc "$file" --standalone --self-contained --katex --template="$GITHUB_WORKSPACE/templates/elegant_bootstrap_menu.html" --css "$GITHUB_WORKSPACE/templates/elegant_bootstrap.css" -o "$output"
-            pandoc "$file" --standalone --self-contained --katex --template="$GITHUB_WORKSPACE/templates/bootstrap_menu.html" --toc -o "$output"
+            #pandoc "$file" --standalone --self-contained --katex --template="$GITHUB_WORKSPACE/templates/bootstrap_menu.html" --toc -o "$output"
+            pandoc "$file" --standalone --self-contained  --template="$GITHUB_WORKSPACE/templates/bootstrap_menu2.html" --toc -o "$output"
             
             
           done
