@@ -10,11 +10,20 @@ def convert_md_to_html():
     # --katex: 数式の描写。mathjaxはうまくいかず
     # --metadata title="タイトル": ページのタイトルを設定
     # --toc: 目次の作成
+    
+    #args = [
+    #    '--standalone',
+    #    '--self-contained',
+    #    '--katex',
+    #    '--template=./templates/bootstrap_menu2.html',
+    #    '--toc'        
+    #]
+    
     args = [
         '--standalone',
         '--self-contained',
-        '--katex',
-        '--template=./templates/bootstrap_menu.html',
+        #'--katex',
+        '--template=./templates/bootstrap_menu2.html',
         '--toc'        
     ]
 
