@@ -167,9 +167,13 @@ def save_outputs(extraction_data, json_filename="output.json", md_filename="outp
         json.dump(extraction_list, f, ensure_ascii=False, indent=2)
     
     # 2. Markdownファイルの保存
-    with open(md_filename, "w", encoding="utf-8", newline='\n') as f:
-        f.write(fix_inline_math_spaces(extraction_data.content_markdown.replace('\\n', '\n'))) #geminiはエスケープして出力することあり
-
+    content_md = extraction_data.content_markdown.replace('\\n', '\n') # geminiはエスケープして出力することあり
+    
+    # 【追加機能】「---」のみの行（水平線）の後ろに改行を1行強制追加してYAML誤認を防止する
+    content_md = re.sub(r'(?m)^(---+\s*)$', r'\1\n', content_md)
+    
+    # 既存のスペース調整などを適用
+    final_md = fix_inline_math_spaces(content_md)
     print(f"保存完了: {json_filename}, {md_filename}")
 
 
