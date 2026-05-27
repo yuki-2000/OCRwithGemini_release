@@ -174,6 +174,8 @@ def save_outputs(extraction_data, json_filename="output.json", md_filename="outp
     
     # 既存のスペース調整などを適用
     final_md = fix_inline_math_spaces(content_md)
+    with open(md_filename, "w", encoding="utf-8", newline='\n') as f:
+        f.write(final_md)
     print(f"保存完了: {json_filename}, {md_filename}")
 
 
