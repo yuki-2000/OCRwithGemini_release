@@ -19,7 +19,7 @@ json_filename="output.json"
 md_filename="output.md"
 
 
-prompt = "添付されたPDFファイルの解析（翻訳と図表リスト化）を行ってください。"
+prompt = "添付されたPDFファイルを解析し、日本語への翻訳と図表リスト化をしてください。"
 
 
 system_instruction_prompt = r"""
