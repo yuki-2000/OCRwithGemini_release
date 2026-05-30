@@ -52,8 +52,7 @@ def convert_md_to_html():
         #'--katex', #数式はhtml側で
         '--mathjax',
         '--template=./templates/bootstrap_menu2.html',
-        '--toc',        
-        f'--resource-path={resource_path}',
+        '--toc',
         f'--metadata=title:{title}',
     ]
 

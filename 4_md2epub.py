@@ -4,73 +4,6 @@ import pypandoc
 import os
 import re
 
-def convert_md_to_epub():
-    input_file = 'output.md'
-    output_file = 'output_local.epub'
-    title = os.path.splitext(os.path.basename(input_tmp_file))[0]
-
-    # 1. 元のMarkdownファイルの存在チェック
-    if not os.path.exists(input_file):
-        print(f"Error: 入力ファイル '{input_file}' が見つかりません。")
-        return
-
-    # 一時ファイルのパスを作成（画像パスの維持のため、入力ファイルと同じディレクトリに配置します）
-    input_dir = os.path.dirname(input_file) or '.'
-    input_base = os.path.basename(input_file)
-    temp_file = os.path.join(input_dir, f"_temp_{input_base}")
-
-    try:
-        # 2. 元ファイルを読み込み、自動クリーニングして「一時ファイル」に書き出す
-        print("Markdownファイルを読み込んで、自動補正を適用中...")
-        with open(input_file, 'r', encoding='utf-8') as f:
-            raw_content = f.read()
-
-        cleaned_content = clean_markdown_for_epub(raw_content)
-
-        # 一時ファイルとして書き出す
-        with open(temp_file, 'w', encoding='utf-8', newline='\n') as f:
-            f.write(cleaned_content)
-        print(f"一時ファイルを作成しました: {temp_file}")
-
-        # 3. Pandocのオプション設定 (MathML数式対応) [2]
-        args = [
-            '-t', 'epub3',
-            '--standalone',
-            '--mathml',  # iPadのブックアプリで美しく表示させるためのMathML [2]
-            f'--metadata=title:{title}',
-            '--toc'
-        ]
-
-        # 4. 「一時ファイル」を入力として、EPUBへの変換を実行
-        print("EPUBへ変換中（MathML適用）...")
-        pypandoc.convert_file(
-            temp_file,  # 入力を temp_file に変更
-            'epub3', 
-            format='md', 
-            extra_args=args, 
-            outputfile=output_file
-        )
-        print(f"Success: {output_file} が正常に生成されました！")
-        
-    except OSError:
-        print("Error: システムに Pandoc がインストールされていない可能性があります。")
-    except RuntimeError as e:
-        print(f"Error (Pandoc変換エラー): {e}")
-    except Exception as e:
-        print(f"Error: {e}")
-        
-    finally:
-        # 5. 【クリーンアップ】プログラムが成功しても失敗しても、一時ファイルが存在すれば削除する
-        if os.path.exists(temp_file):
-            try:
-                os.remove(temp_file)
-                print(f"一時ファイルをクリーンアップ（削除）しました: {temp_file}")
-            except Exception as delete_error:
-                print(f"Warning (一時ファイルの削除失敗): {delete_error}")
-
-
-if __name__ == "__main__":
-    convert_md_to_epub()
 
 
 
@@ -143,6 +76,78 @@ def clean_markdown_for_epub(content):
     content = re.sub(r'[\u0300-\u036f]', '', content)
 
     return content
+
+
+
+def convert_md_to_epub():
+    input_file = 'output.md'
+    output_file = 'output_local.epub'
+    title = os.path.splitext(os.path.basename(input_file))[0]
+
+    # 1. 元のMarkdownファイルの存在チェック
+    if not os.path.exists(input_file):
+        print(f"Error: 入力ファイル '{input_file}' が見つかりません。")
+        return
+
+    # 一時ファイルのパスを作成（画像パスの維持のため、入力ファイルと同じディレクトリに配置します）
+    input_dir = os.path.dirname(input_file) or '.'
+    input_base = os.path.basename(input_file)
+    temp_file = os.path.join(input_dir, f"_temp_{input_base}")
+
+    try:
+        # 2. 元ファイルを読み込み、自動クリーニングして「一時ファイル」に書き出す
+        print("Markdownファイルを読み込んで、自動補正を適用中...")
+        with open(input_file, 'r', encoding='utf-8') as f:
+            raw_content = f.read()
+
+        cleaned_content = clean_markdown_for_epub(raw_content)
+
+        # 一時ファイルとして書き出す
+        with open(temp_file, 'w', encoding='utf-8', newline='\n') as f:
+            f.write(cleaned_content)
+        print(f"一時ファイルを作成しました: {temp_file}")
+
+        # 3. Pandocのオプション設定 (MathML数式対応) [2]
+        args = [
+            '-t', 'epub3',
+            '--standalone',
+            '--mathml',  # iPadのブックアプリで美しく表示させるためのMathML [2]
+            f'--metadata=title:{title}',
+            '--toc'
+        ]
+
+        # 4. 「一時ファイル」を入力として、EPUBへの変換を実行
+        print("EPUBへ変換中（MathML適用）...")
+        pypandoc.convert_file(
+            temp_file,  # 入力を temp_file に変更
+            'epub3', 
+            format='md', 
+            extra_args=args, 
+            outputfile=output_file
+        )
+        print(f"Success: {output_file} が正常に生成されました！")
+        
+    except OSError:
+        print("Error: システムに Pandoc がインストールされていない可能性があります。")
+    except RuntimeError as e:
+        print(f"Error (Pandoc変換エラー): {e}")
+    except Exception as e:
+        print(f"Error: {e}")
+        
+    finally:
+        # 5. 【クリーンアップ】プログラムが成功しても失敗しても、一時ファイルが存在すれば削除する
+        if os.path.exists(temp_file):
+            try:
+                os.remove(temp_file)
+                print(f"一時ファイルをクリーンアップ（削除）しました: {temp_file}")
+            except Exception as delete_error:
+                print(f"Warning (一時ファイルの削除失敗): {delete_error}")
+
+
+if __name__ == "__main__":
+    convert_md_to_epub()
+
+
 
 
 
