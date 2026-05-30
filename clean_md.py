@@ -7,14 +7,27 @@ def clean_markdown_for_epub(content):
     Markdownファイル内の数式などをPandoc/MathML/EPUB向けに
     自動的かつ安全に補正・クリーニングする関数
     """
-    # 1. インチ記号 (") を LaTeX で正当な表現 (\text{''}) に置換
-    def replace_in_math(match):
-        math_part = match.group(0)
-        fixed_math = math_part.replace('"', r"\text{''}")
-        return fixed_math
+    # 1. インチ記号の補正。
+    #    \text{...} の中にある " は LaTeX/texmath で正常に扱えるので温存する。
+    #    数式中で \text{} の外に裸で出ている " だけを、テキストとして安全な
+    #    ダブルプライム ″ (U+2033) に置換する。\text{''} への置換はネストを
+    #    生んで Pandoc を落とすため使わない。
+    #
+    #    仕組み: \text{...}（1段ネストまで許容）を選択肢の左側に置いて先に
+    #    丸ごと消費させ、その外側にある裸の " だけが repl で置換される。
+    _text_or_quote = re.compile(r'\\text\{(?:[^{}]|\{[^{}]*\})*\}|"')
 
-    content = re.sub(r'\$\$.*?\$\$', replace_in_math, content, flags=re.DOTALL)
-    content = re.sub(r'\$.*?\$', replace_in_math, content)
+    def _fix_quotes(math_part):
+        def repl(m):
+            s = m.group(0)
+            if s == '"':
+                return '″'   # \text{} の外の裸のインチ記号
+            return s         # \text{...} はそのまま温存
+        return _text_or_quote.sub(repl, math_part)
+
+    # $$ ... $$ (ブロック数式) と $ ... $ (インライン数式) の中だけに適用
+    content = re.sub(r'\$\$.*?\$\$', lambda m: _fix_quotes(m.group(0)), content, flags=re.DOTALL)
+    content = re.sub(r'\$.*?\$', lambda m: _fix_quotes(m.group(0)), content)
 
     # 2. \tag{...} を数式ブロックの外側に自動で退避させる
     def process_block(match):
@@ -23,7 +36,7 @@ def clean_markdown_for_epub(content):
         if tag_match:
             tag_val = tag_match.group(1)
             cleaned_block = re.sub(r'\\tag\{[^}]+\}', '', block_content).strip()
-            return f"$$\n{cleaned_block}\n$$\n*(式 {tag_val})*"
+            return f"$$\n{cleaned_block}\n$$\n*({tag_val})*"
         return match.group(0)
 
     content = re.sub(r'\$\$(.*?)\$\$', process_block, content, flags=re.DOTALL)
