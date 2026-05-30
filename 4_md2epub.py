@@ -7,6 +7,7 @@ import re
 def convert_md_to_epub():
     input_file = 'output.md'
     output_file = 'output_local.epub'
+    title = os.path.splitext(os.path.basename(input_tmp_file))[0]
 
     # 1. 元のMarkdownファイルの存在チェック
     if not os.path.exists(input_file):
@@ -36,7 +37,7 @@ def convert_md_to_epub():
             '-t', 'epub3',
             '--standalone',
             '--mathml',  # iPadのブックアプリで美しく表示させるためのMathML [2]
-            #'--metadata', 'title=NASA Chapter 4 翻訳ドキュメント',
+            f'--metadata=title:{title}',
             '--toc'
         ]
 
@@ -79,18 +80,30 @@ def clean_markdown_for_epub(content):
     自動的かつ安全に補正・クリーニングする関数
     """
     # ---------------------------------------------------------
-    # 1. インチ記号 (") を LaTeX で正当な表現 (\text{''}) に置換
+    # 1. インチ記号の補正。
+    #    \text{...} の中にある " は LaTeX/texmath で正常に扱えるので温存する。
+    #    数式中で \text{} の外に裸で出ている " だけを、テキストとして安全な
+    #    ダブルプライム ″ (U+2033) に置換する。\text{''} への置換はネストを
+    #    生んで Pandoc を落とすため使わない。
+    #
+    #    仕組み: \text{...}（1段ネストまで許容）を選択肢の左側に置いて先に
+    #    丸ごと消費させ、その外側にある裸の " だけが repl で置換される。
     # ---------------------------------------------------------
-    def replace_in_math(match):
-        math_part = match.group(0)
-        # " を \text{''} に置換 (in. の前後に微調整のスペースを入れる)
-        fixed_math = math_part.replace('"', r"\text{''}")
-        return fixed_math
+    _text_or_quote = re.compile(r'\\text\{(?:[^{}]|\{[^{}]*\})*\}|"')
 
-    # $$ ... $$ (ブロック数式) 内の " を置換
-    content = re.sub(r'\$\$.*?\$\$', replace_in_math, content, flags=re.DOTALL)
-    # $ ... $ (インライン数式) 内の " を置換
-    content = re.sub(r'\$.*?\$', replace_in_math, content)
+    def _fix_quotes(math_part):
+        def repl(m):
+            s = m.group(0)
+            if s == '"':
+                return '″'   # \text{} の外の裸のインチ記号
+            return s         # \text{...} はそのまま温存
+        return _text_or_quote.sub(repl, math_part)
+
+    # $$ ... $$ (ブロック数式) と $ ... $ (インライン数式) の中だけに適用
+    content = re.sub(r'\$\$.*?\$\$', lambda m: _fix_quotes(m.group(0)),
+                     content, flags=re.DOTALL)
+    content = re.sub(r'\$.*?\$', lambda m: _fix_quotes(m.group(0)), content)
+
 
 
     # ---------------------------------------------------------
@@ -130,7 +143,6 @@ def clean_markdown_for_epub(content):
     content = re.sub(r'[\u0300-\u036f]', '', content)
 
     return content
-
 
 
 
