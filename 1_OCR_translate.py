@@ -46,7 +46,7 @@ system_instruction_prompt = r"""
 - 各図表について、途切れることないよう切り出すための座標（Bounding Box）を特定してください。
 - 座標はPDFのページサイズに対する相対値として **0から1000の範囲（正規化座標）** で `[ymin, xmin, ymax, xmax]` の順に出力してください。
 - `page_number` は 1 から始まるページ番号です。
-- `filename` は `p1_fig_01.png`, `p5_table_01.png` のように`p[ページ番号]_[fig/table]_[連番].png`命名してください。
+- `filename` は `p1_fig_0001.png`, `p5_table_0001.png` のように必ず `p[ページ番号]_[fig または table]_[連番].png` の形式で命名してください。図は必ず `fig`、表は必ず `table` という綴りを使用し、`tab` などの略記は絶対に使用しないでください。
 
 ### 3. **ドキュメント内容 (Markdown形式)**
 - 本文を日本語に翻訳し、Markdown形式で出力してください。
@@ -87,10 +87,8 @@ system_instruction_prompt = r"""
     * 数学的なアルファベットは大文字と小文字を区別し、勝手に入れ替えないでください。
     * AIとしての「気を利かせた修正」は不要です。人間がタイプミスをしている場合でも、画像にある通りの順序で出力する「逐一出力（Verbatim）」モードで動作してください。
 - **重要:** 抽出リストで特定した図表がある位置には、対応する画像リンク `![図表の説明](filename)` を挿入してください。"
+
 """
-
-
-
 
 
 #json形式の構造化出力に使用
@@ -99,8 +97,8 @@ class FigureTableItem(BaseModel):
     """
     ドキュメント内の図または表の情報を定義するモデル
     """
-    id: str = Field(description="図表の一意識別子（例: p1_fig1, p5_tab1）")
-    filename: str = Field(description="保存する際のファイル名（例: p1_fig_01.png）")
+    id: str = Field(description="図表の一意識別子（例: p1_fig0001, p5_table0001）")
+    filename: str = Field(description="保存する際のファイル名（例: p1_fig_0001.png, p5_table0001）")
     page_number: int = Field(description="1から始まるページ番号")
     box_2d: List[int] = Field(
         description="[ymin, xmin, ymax, xmax] の順で、0-1000の範囲で正規化された座標",
