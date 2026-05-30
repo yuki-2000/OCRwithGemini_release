@@ -11,6 +11,7 @@ permissions:
 jobs:
   convert:
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     steps:
       # 1. コードのチェックアウト（履歴をすべて取得）
       - name: Checkout code
@@ -18,7 +19,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      # 2. Pythonのセットアップ
+      # 2. Pythonのセットアップ (clean_md.py の実行に必要)
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -28,13 +29,12 @@ jobs:
       - name: Install Pandoc
         uses: pandoc/actions/setup@v1
         with:
-          version: '3.1.11'  # 'latest' の代わりに具体的なバージョンを指定
+          version: '3.1.11'  # 安定稼働する特定のバージョンを指定
 
-      # 4. 変更された.mdファイルの特定、クリーニング、HTML&EPUBへの変換
+      # 4. 変更された.mdファイルを特定、サブフォルダに移動してクリーニングおよび変換
       - name: Clean and Convert Markdown to HTML and EPUB
         run: |
           # 今回のプッシュで追加・修正された .md ファイルを取得
-          # (最初のコミットなどの場合は比較対象がないため、全ファイルを対象にする等の考慮が必要)
           files=$(git diff --name-only --diff-filter=AM ${{ github.event.before }} ${{ github.sha }} | grep '\.md$' || true)
           
           if [ -z "$files" ]; then
@@ -49,35 +49,57 @@ jobs:
 
             echo "Processing $file..."
             
-            # --- [修正] 画像の相対パスを維持するため、同じフォルダ内に一時ファイル名を定義 ---
-            temp_file="${file%.md}_temp.md"
+            # ディレクトリパスとファイル名を分離
+            dir_path=$(dirname "$file")
+            file_name=$(basename "$file")
             
-            # 4-1. 元ファイルを上書きせず、補正済みのデータを一時ファイル（_temp.md）に書き出す
-            python clean_md.py "$file" "$temp_file"
+            # ディレクトリ内での一時ファイル名と出力ファイル名を定義
+            temp_file_name="${file_name%.md}_temp.md"
+            output_html="${file_name%.md}.html"
+            output_epub="${file_name%.md}.epub"
 
-            # 4-2. 一時ファイルから HTML へ変換 (Pandoc 3.x のため --embed-resources を使用)
-            output_html="${file%.md}.html"
-            # pandoc "$file" --standalone --self-contained --katex -o "$output"
-            # pandoc "$file" --standalone --self-contained --katex --template="$GITHUB_WORKSPACE/templates/easy_template.html" -o "$output"
-            # pandoc "$file" --standalone --self-contained --katex --template="$GITHUB_WORKSPACE/templates/elegant_bootstrap_menu.html" --css "$GITHUB_WORKSPACE/templates/elegant_bootstrap.css" -o "$output"
-            #pandoc "$file" --standalone --self-contained --katex --template="$GITHUB_WORKSPACE/templates/bootstrap_menu.html" --toc -o "$output"
-            pandoc "$file" --standalone --embed-resources --template="$GITHUB_WORKSPACE/templates/bootstrap_menu2.html" --toc -o "$output_html"
-            
-            # 4-3. 一時ファイルから EPUB3 へ変換 (MathML適用) [2]
-            output_epub="${file%.md}.epub"
-            pandoc "$temp_file" -t epub3 --standalone --mathml --toc -o "$output_epub"
-            
-            # 4-4. [追加] 変換が無事に終わったら、一時ファイルを即時削除
-            rm -f "$temp_file"
-            echo "Deleted temporary file: $temp_file"
+            # サブシェル ( ) を使い、該当ファイルのディレクトリに移動して実行
+            # これにより画像フォルダ(images/等)の相対パスが、ファイル基準で正しく解決されます
+            (
+              cd "$dir_path" || exit
+              
+              # 4-1. clean_md.py を実行 (ワークスペースのルートからスクリプトを参照)
+              python "$GITHUB_WORKSPACE/clean_md.py" "$file_name" "$temp_file_name"
+
+              # 4-2. HTMLへ変換 (--embed-resources で画像をHTML内に埋め込む) [2.1.8]
+              # pandoc "$file" --standalone --self-contained --katex -o "$output"
+              # pandoc "$file" --standalone --self-contained --katex --template="$GITHUB_WORKSPACE/templates/easy_template.html" -o "$output"
+              # pandoc "$file" --standalone --self-contained --katex --template="$GITHUB_WORKSPACE/templates/elegant_bootstrap_menu.html" --css "$GITHUB_WORKSPACE/templates/elegant_bootstrap.css" -o "$output"
+              # pandoc "$file" --standalone --self-contained --katex --template="$GITHUB_WORKSPACE/templates/bootstrap_menu.html" --toc -o "$output"
+              # pandoc "$file_name" --standalone --embed-resources --template="$GITHUB_WORKSPACE/templates/bootstrap_menu2.html" --toc -o "$output_html"
+              
+              # HTMLへ変換（--mathjaxで数式をMathJaxに渡す。画像は埋め込まない）
+              pandoc "$file_name" --standalone --mathjax --metadata title="${file_name%.md}" --template="$GITHUB_WORKSPACE/templates/bootstrap_menu2.html" --toc -o "$output_html"
+              # 変換後、画像をbase64でHTMLに埋め込む（カレントディレクトリ=画像フォルダ）
+              python "$GITHUB_WORKSPACE/embed_images.py" "$output_html" "."
+              
+
+
+              # 4-3. クリーニング済み一時ファイルから EPUB3 へ変換 (MathML適用) [2]
+              pandoc "$temp_file_name" -t epub3 --standalone --mathml --metadata title="${file_name%.md}" --toc -o "$output_epub"
+              
+              # 4-4. 一時ファイルを削除
+              rm -f "$temp_file_name"
+              echo "Finished processing in $dir_path"
+            )
             
           done
 
+      
       # 5. 生成されたHTMLとEPUBをリポジトリにコミット
       - name: Commit and Push changes
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "Auto-convert Markdown to HTML and EPUB [skip ci]"
-          file_pattern: |
-            **.html
-            **.epub
+          # 1. 改行を防ぐため、スペース区切りの1行で指定します
+          file_pattern: '**.html **.epub'
+          # 2. シェルではなく、Gitに直接パターンを解釈させて全階層を再帰的（**）に探索させます
+          disable_globbing: true
+          # 3. 新規ファイルを無視してしまう --update を、新規も変更も含める --all に変更します
+          add_options: '--all'
+      
